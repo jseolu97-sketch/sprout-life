@@ -1,0 +1,890 @@
+<title>새싹 인생게임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: 교실 창가 관찰일지. 위 HUD(주차·날씨·용돈·행동력), 왼쪽 화분 무대, 오른쪽 행동/상점/일지 탭. 모바일은 쌓임 */
+:root{
+  --bg:#EAF0E1; --surface:#F8FBF2; --stage:#DCE7CC; --ink:#1D2A20; --muted:#56675A; --line:#C3CFB4;
+  --accent:#E8AF0B; --accent-ink:#2A2003; --leaf:#357A3B; --water:#2B78AE; --sun:#C9870A; --nutri:#8A5A2B;
+  --danger:#BE4129; --event:#B0501A; --band:rgba(53,122,59,.22); --scrim:rgba(20,28,22,.55);
+  --pot:#B4613C; --pot-rim:#C9734B; --soil:#4E3626; --stake:#A08257;
+  --s-calm:#CFE3C2; --s-event:#F2B48C; --s-friend:#B7D6EE; --s-luck:#F6DA7A; --s-ink:#1D2A20;
+  --display:'Jua','Gowun Dodum','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --body:'Gowun Dodum','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121914; --surface:#1A231C; --stage:#1F2C21; --ink:#E4ECDA; --muted:#9AAA94; --line:#2F3D31;
+  --accent:#F2C232; --accent-ink:#231A02; --leaf:#6DB46F; --water:#5AA7DA; --sun:#F0B43A; --nutri:#C99462;
+  --danger:#E8705A; --event:#E8894E; --band:rgba(109,180,111,.24); --scrim:rgba(0,0,0,.65);
+  --pot:#A7593A; --pot-rim:#BC6A48; --soil:#3A281C; --stake:#8C7148; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#121914; --surface:#1A231C; --stage:#1F2C21; --ink:#E4ECDA; --muted:#9AAA94; --line:#2F3D31;
+  --accent:#F2C232; --accent-ink:#231A02; --leaf:#6DB46F; --water:#5AA7DA; --sun:#F0B43A; --nutri:#C99462;
+  --danger:#E8705A; --event:#E8894E; --band:rgba(109,180,111,.24); --scrim:rgba(0,0,0,.65);
+  --pot:#A7593A; --pot-rim:#BC6A48; --soil:#3A281C; --stake:#8C7148; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+.app{max-width:1100px;margin:0 auto;padding-block:16px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3,h4,.display{font-family:var(--display);font-weight:400;text-wrap:balance;margin:0;line-height:1.25}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+small{font-size:.82rem;color:var(--muted)}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:1.25rem;color:var(--leaf)}
+.hud{display:flex;flex-wrap:wrap;gap:8px}
+.hud > div{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:4px 12px;display:flex;align-items:center;gap:6px;font-size:.9rem;font-variant-numeric:tabular-nums}
+.hud b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.hud svg{width:20px;height:20px;flex:none}
+.ap{display:flex;gap:3px}
+.ap i{width:12px;height:12px;border-radius:50%;border:2px solid var(--accent)}
+.ap i.on{background:var(--accent)}
+
+/* 시작 */
+.intro{display:flex;flex-direction:column;gap:12px;max-width:64ch}
+.intro h1{font-size:clamp(2rem,6vw,3.2rem)}
+.intro p{color:var(--muted);font-size:1.05rem}
+.features{display:flex;flex-wrap:wrap;gap:6px}
+.features span{font-size:.82rem;padding:2px 10px;border-radius:999px;border:1.5px solid var(--line)}
+.name-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.name-row label{font-family:var(--display)}
+.name-row input{font:inherit;padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);width:13em;max-width:100%}
+.plants{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:14px}
+.pcard{display:flex;flex-direction:column;gap:8px;text-align:left;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);transition:transform .15s,border-color .15s}
+.pcard:hover{transform:translateY(-3px);border-color:var(--leaf)}
+.pcard .pic{background:var(--stage);border-radius:12px;display:flex;justify-content:center}
+.pcard svg{height:130px;width:auto}
+.nm{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.nm b{font-family:var(--display);font-weight:400;font-size:1.25rem}
+.lvl{font-size:.75rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tags span{font-size:.75rem;padding:1px 7px;border-radius:6px;background:var(--bg)}
+.achv{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.achv div{border:1.5px dashed var(--line);border-radius:12px;padding:8px 12px;color:var(--muted)}
+.achv div.got{border:1.5px solid var(--accent);color:var(--ink)}
+.achv b{font-family:var(--display);font-weight:400;display:block}
+
+/* 게임 */
+.game{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:18px;align-items:start}
+@media (max-width:800px){.game{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--stage);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.stage-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.stage-head h2{font-size:1.45rem}
+.plant-svg{display:flex;justify-content:center}
+.plant-svg svg{width:100%;max-width:250px;height:auto}
+.spotline{font-size:.88rem;color:var(--muted);text-align:center}
+.stats{display:flex;flex-direction:column;gap:9px}
+.stat-head{display:flex;align-items:center;gap:8px;font-size:.9rem;flex-wrap:wrap}
+.stat-head .lb{font-family:var(--display);min-width:2.8em}
+.stat-head b{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:400}
+.chip{font-size:.72rem;padding:0 7px;border-radius:999px;border:1px solid currentColor;line-height:1.55;white-space:nowrap}
+.chip.ok{color:var(--leaf)} .chip.bad{color:var(--danger)} .chip.mute{color:var(--muted)}
+.meter{position:relative;height:10px;border-radius:6px;background:var(--line)}
+.meter .band{position:absolute;top:-2px;bottom:-2px;background:var(--band);border-radius:4px;border:1.5px dashed var(--leaf)}
+.meter .fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;opacity:.55;transition:width .5s}
+.meter .marker{position:absolute;top:-4px;width:5px;height:18px;border-radius:3px;background:var(--ink);transform:translateX(-50%);transition:left .5s}
+.meter.unknown{background:repeating-linear-gradient(45deg,var(--line) 0 6px,transparent 6px 12px)}
+.conds{display:flex;flex-wrap:wrap;gap:6px}
+.conds span{font-size:.8rem;padding:2px 10px;border-radius:8px;border:1.5px solid var(--danger);color:var(--danger)}
+.conds span.gear{border-color:var(--line);color:var(--ink)}
+.goal{background:var(--surface);border-radius:12px;padding:10px 12px;font-size:.9rem;display:flex;flex-direction:column;gap:2px}
+.goal b{font-family:var(--display);font-weight:400;color:var(--event)}
+
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.feed{background:var(--bg);border-radius:12px;padding:10px 14px;font-size:.9rem;display:flex;flex-direction:column;gap:4px;min-height:3.2em}
+.feed h4{font-size:.95rem;color:var(--muted)}
+.feed p:first-of-type{color:var(--ink)}
+.feed p{color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line)}
+.tabs button{background:none;border:0;padding:8px 14px;font-family:var(--display);color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.act{text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);display:flex;flex-direction:column;gap:2px;transition:border-color .15s,transform .15s}
+.act:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}
+.act b{font-family:var(--display);font-weight:400;font-size:1.05rem}
+.act small{line-height:1.4}
+.act .cost{font-size:.75rem;color:var(--sun)}
+.act:disabled{opacity:.55}
+.act:disabled .cost{color:var(--danger)}
+.act.special{border-color:var(--event)}
+.shop{display:flex;flex-direction:column;gap:8px}
+.shop .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.shop .row b{font-family:var(--display);font-weight:400}
+.buy{border:1.5px solid var(--accent);background:transparent;border-radius:999px;padding:4px 14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.buy:disabled{border-color:var(--line);color:var(--muted)}
+.journal{display:flex;flex-direction:column;gap:10px;max-height:460px;overflow:auto}
+.journal section{border-left:3px solid var(--line);padding-left:12px}
+.journal h4{font-size:1rem}
+.journal ul{margin:4px 0 0;padding-left:18px;font-size:.9rem}
+.panel-foot{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:10px 22px;font-family:var(--display);font-size:1.08rem}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.pulse{box-shadow:0 0 0 4px var(--band)}
+
+/* 모달 */
+.modal{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:20;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet{background:var(--surface);border-radius:20px;padding:22px;width:100%;max-width:540px;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:14px;border:1.5px solid var(--line)}
+.sheet.event{border-color:var(--event)}
+.sheet h3{font-size:1.55rem}
+.eyebrow{font-size:.8rem;letter-spacing:.06em;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{color:var(--event);border:1.5px solid var(--event);border-radius:999px;padding:0 8px;font-family:var(--display);letter-spacing:.02em}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice{text-align:left;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);display:flex;gap:12px;align-items:center;transition:border-color .15s,transform .15s}
+.choice:hover:not(:disabled){border-color:var(--accent);transform:translateX(3px)}
+.choice:disabled{opacity:.55}
+.choice .k{font-family:var(--display);width:1.8em;height:1.8em;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid var(--line)}
+.choice span small{display:block}
+.lines{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.lines li{padding:8px 12px;border-radius:10px;background:var(--bg);font-size:.93rem}
+.lines li.bad{border-left:4px solid var(--danger)}
+.lines li.good{border-left:4px solid var(--leaf)}
+.deltas{display:flex;flex-wrap:wrap;gap:6px}
+.deltas span{font-size:.85rem;padding:2px 10px;border-radius:8px;background:var(--bg);font-variant-numeric:tabular-nums}
+.deltas .up{color:var(--leaf)} .deltas .down{color:var(--danger)}
+.tip{background:var(--stage);border-radius:12px;padding:10px 14px;font-size:.92rem}
+.tip b{font-family:var(--display);font-weight:400;color:var(--leaf);margin-right:6px}
+.wheel-wrap{position:relative;width:min(260px,70vw);aspect-ratio:1;max-width:100%;margin:6px auto}
+.wheel{width:100%;height:100%;border-radius:50%;border:4px solid var(--ink);position:relative;transition:transform 2.6s cubic-bezier(.15,.7,.2,1)}
+.wheel span{position:absolute;font-family:var(--display);font-size:.88rem;color:var(--s-ink);white-space:nowrap}
+.pointer{position:absolute;left:50%;top:-10px;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--ink);z-index:1}
+.paths{display:flex;flex-direction:column;gap:10px}
+.path{text-align:left;padding:14px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);display:flex;flex-direction:column;gap:4px}
+.path:hover{border-color:var(--event)}
+.path b{font-family:var(--display);font-weight:400;font-size:1.2rem}
+
+/* 결말 */
+.end{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,6fr);gap:20px;align-items:start}
+@media (max-width:800px){.end{grid-template-columns:minmax(0,1fr)}}
+.verdict{display:flex;flex-direction:column;gap:12px}
+.verdict h2{font-size:clamp(1.8rem,5vw,2.6rem)}
+.summary{display:flex;gap:8px;flex-wrap:wrap}
+.summary div{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:6px 14px}
+.summary small{display:block}
+.summary b{font-family:var(--display);font-weight:400;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.rowb{display:flex;gap:10px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <span class="brand">새싹 인생게임</span>
+    <div class="hud" id="hud" hidden></div>
+  </header>
+
+  <section id="pick">
+    <div class="intro">
+      <h1>12주, 내 식물의 인생</h1>
+      <p>식물 하나를 골라 교실에서 12주 동안 키워요. 매주 행동력 3을 어디에 쓸지 직접 정하고, 용돈으로 도구를 사고, 날씨 예보를 보고 대비하세요. 룰렛이 돌아가면 무슨 일이 생길지 아무도 몰라요.</p>
+      <div class="features"><span>행동 11가지</span><span>상점과 용돈</span><span>날씨 예보</span><span>운명의 룰렛</span><span>4주차 인생 갈림길</span><span>숨은 병충해</span><span>엔딩과 업적</span></div>
+      <div class="name-row"><label for="petname">식물 이름</label><input id="petname" maxlength="10" placeholder="비워 두면 자동으로 지어요"></div>
+    </div>
+    <div class="plants" id="plants" style="margin-top:18px"></div>
+    <h2 style="margin-top:28px;font-size:1.4rem">모은 업적</h2>
+    <div class="achv" id="achv" style="margin-top:10px"></div>
+  </section>
+
+  <section id="game" class="game" hidden>
+    <div class="stage" id="stage"></div>
+    <div class="panel">
+      <div class="feed" id="feed" aria-live="polite"></div>
+      <div class="tabs" role="tablist">
+        <button role="tab" data-tab="act" aria-selected="true">행동</button>
+        <button role="tab" data-tab="shop" aria-selected="false">상점</button>
+        <button role="tab" data-tab="log" aria-selected="false">관찰일지</button>
+      </div>
+      <div id="tabbody"></div>
+      <div class="panel-foot"><small id="aphint"></small><button class="btn" id="endweek" data-endweek>이번 주 마치기</button></div>
+    </div>
+  </section>
+
+  <section id="end" class="end" hidden></section>
+</div>
+<div class="modal" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<script>
+// ================= 데이터 =================
+const WEEKS = 12;
+const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
+const mid = r => (r[0] + r[1]) / 2;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const FLOWERING = new Set(['tomato', 'sunflower', 'bean']);
+const STAT = { water: '물', light: '빛', nutri: '양분', health: '건강', growth: '성장' };
+
+const PLANTS = {
+  tomato: { name: '방울토마토', pet: '토토', lvl: '어려움', desc: '햇빛과 양분을 듬뿍 먹고 빨간 열매를 맺어요.',
+    tags: ['햇빛 많이', '물 넉넉히', '비료 많이'], thirst: 18, speed: 1,
+    ideal: { water: [50, 80], light: [60, 95], nutri: [45, 90] }, stages: ['꽃이 핀 시기', '열매가 익는 시기'], goal: '빨간 방울토마토가 주렁주렁 열렸어요',
+    hints: { water: ['토마토는 물이 모자라면 잎이 처지고 꽃이 떨어져요.', '물이 넘치면 뿌리가 숨을 못 쉬고 열매가 갈라져요.'],
+      light: ['토마토는 하루 6시간 넘게 햇빛을 받아야 열매를 맺어요.', '햇빛이 너무 강하면 잎이 하얗게 탈 수 있어요.'],
+      nutri: ['열매를 키우려면 양분이 많이 필요해요.', '양분이 지나치면 잎만 무성해지고 열매는 줄어요.'] },
+    facts: ['토마토는 원래 남아메리카 안데스 산맥에서 온 식물이에요.', '토마토 꽃은 바람에 흔들리기만 해도 스스로 꽃가루받이를 할 수 있어요.'] },
+  sunflower: { name: '해바라기', pet: '해바라', lvl: '보통', desc: '해를 향해 쑥쑥, 얼굴만 한 꽃을 피워요.',
+    tags: ['햇빛 아주 많이', '물 넉넉히', '비료 보통'], thirst: 16, speed: 1,
+    ideal: { water: [45, 80], light: [70, 100], nutri: [35, 80] }, stages: ['꽃봉오리가 생김', '꽃이 활짝 핌'], goal: '얼굴만 한 해바라기 꽃이 활짝 피었어요',
+    hints: { water: ['해바라기는 키가 크는 만큼 물을 많이 마셔요.', '흙이 늘 젖어 있으면 줄기 밑동이 물러져요.'],
+      light: ['빛이 부족하면 줄기가 가늘고 길게 웃자라요.', '햇빛이 너무 강해서 잎이 탈 수 있어요.'],
+      nutri: ['큰 꽃을 피우려면 양분이 더 필요해요.', '비료가 너무 많으면 줄기가 약해져 쓰러지기 쉬워요.'] },
+    facts: ['어린 해바라기는 낮 동안 해를 따라 고개를 돌리지만, 꽃이 피면 대부분 동쪽을 향해 멈춰요.', '해바라기 꽃 한 송이는 사실 작은 꽃 수백 개가 모인 거예요.'] },
+  lettuce: { name: '상추', pet: '상추쌈', lvl: '보통', desc: '시원하고 촉촉한 걸 좋아하는 잎채소예요.',
+    tags: ['햇빛 적당히', '물 자주', '강한 볕 싫어함'], thirst: 20, speed: 1.05,
+    ideal: { water: [55, 85], light: [35, 70], nutri: [35, 75] }, stages: ['잎이 풍성해짐', '수확할 시기'], goal: '쌈 싸 먹을 만큼 풍성한 상추를 수확했어요',
+    hints: { water: ['상추는 잎이 얇아서 물이 부족하면 금방 시들고 쓴맛이 나요.', '과습하면 잎 밑동이 물러 썩어요.'],
+      light: ['빛이 부족하면 잎이 가늘고 힘없이 웃자라요.', '햇빛과 더위가 지나치면 꽃대가 올라와 잎이 질기고 써져요.'],
+      nutri: ['잎채소는 질소 양분이 부족하면 잎이 연노랗게 변해요.', '비료가 진하면 잎 끝이 갈색으로 타요.'] },
+    facts: ['상추는 서늘한 15~20도에서 가장 잘 자라요.', '상추 줄기를 자르면 하얀 즙이 나와요. 그래서 이름이 젖을 뜻하는 라틴어에서 왔어요.'] },
+  succulent: { name: '다육이', pet: '통통이', lvl: '보통', desc: '잎에 물을 저장하는 사막 출신 식물이에요.',
+    tags: ['햇빛 많이', '물 아주 조금', '비료 거의 안 줌'], thirst: 10, speed: 0.95,
+    ideal: { water: [10, 40], light: [55, 95], nutri: [5, 45] }, stages: ['통통한 로제트', '꽃대가 올라옴'], goal: '통통한 다육이에서 꽃대가 올라왔어요',
+    hints: { water: ['다육이도 너무 오래 굶으면 잎이 쭈글쭈글해져요.', '다육이는 잎에 물을 저장해요. 흙이 계속 젖어 있으면 뿌리가 썩어요.'],
+      light: ['빛이 부족하면 줄기가 길게 늘어나는 웃자람이 생겨요.', '한여름 직사광선은 잎을 태울 수 있어요.'],
+      nutri: ['양분이 바닥나면 성장이 멈춰요.', '다육이는 거친 땅에서 사는 식물이라 비료를 아주 조금만 줘요.'] },
+    facts: ['다육이는 밤에 기공을 열어 이산화탄소를 모아요. 낮에 물이 날아가는 걸 막기 위해서예요.', '다육이 잎 한 장을 흙 위에 두면 새 뿌리와 싹이 나기도 해요.'] },
+  bean: { name: '강낭콩', pet: '콩콩이', lvl: '쉬움', desc: '빨리 자라고 덩굴을 감으며 꼬투리를 맺어요.',
+    tags: ['햇빛 많이', '물 보통', '비료 조금'], thirst: 16, speed: 1.05,
+    ideal: { water: [45, 75], light: [50, 90], nutri: [20, 65] }, stages: ['꽃이 핀 시기', '꼬투리가 달림'], goal: '꼬투리 가득 강낭콩을 수확했어요',
+    hints: { water: ['꼬투리가 생길 때 물이 부족하면 콩알이 작아져요.', '물이 고이면 뿌리가 숨을 못 쉬어요.'],
+      light: ['강낭콩은 햇빛이 부족하면 꽃이 잘 안 피어요.', '햇빛이 너무 강해서 잎이 탈 수 있어요.'],
+      nutri: ['콩도 기본 양분은 필요해요.', '콩은 뿌리혹박테리아가 공기 속 질소를 모아 줘서, 비료를 많이 주면 오히려 잎만 자라요.'] },
+    facts: ['콩과 식물 뿌리의 작은 혹에는 공기 속 질소를 양분으로 바꾸는 세균이 살아요.', '강낭콩 덩굴은 위에서 보면 시계 반대 방향으로 감아 올라가요.'] },
+};
+
+const SPOTS = {
+  window: { name: '남쪽 창가', light: 85, f: .7, hot: true, desc: '햇빛이 오래 들어요. 폭염엔 뜨거워져요.' },
+  center: { name: '교실 가운데', light: 58, f: .5, desc: '밝지만 직사광선은 잠깐이에요.' },
+  back: { name: '사물함 위', light: 32, f: .3, desc: '그늘이 많고 날씨 영향이 적어요.' },
+  outside: { name: '창밖 화분대', light: 92, f: 1, outdoor: true, hot: true, desc: '햇빛 최고! 대신 비, 바람, 벌레를 그대로 맞아요.' },
+};
+const WEATHER = {
+  sun: { name: '맑음', w: 34, decay: 1, light: 8, rain: 0, note: '평소처럼 흙이 말라요.' },
+  cloud: { name: '흐림', w: 24, decay: .75, light: -22, rain: 0, note: '빛이 줄고 흙이 천천히 말라요.' },
+  rain: { name: '비', w: 22, decay: .6, light: -28, rain: 30, note: '창밖 화분은 비를 맞아요. 습하면 곰팡이가 생기기 쉬워요.' },
+  heat: { name: '폭염', w: 13, decay: 1.6, light: 12, rain: 0, note: '흙이 아주 빨리 말라요.' },
+  typhoon: { name: '태풍', w: 7, decay: .7, light: -28, rain: 35, note: '창밖 화분은 바람에 꺾일 수 있어요. 고정하거나 들여놓으세요.' },
+};
+const ITEMS = {
+  fert: { name: '액체 비료', price: 3, add: 4, desc: '묽게 타면 4번 쓸 수 있어요.' },
+  compost: { name: '지렁이 퇴비', price: 2, add: 1, desc: '순하고 오래가는 양분 (1번).' },
+  stake: { name: '지지대와 끈', price: 2, add: 1, desc: '줄기를 받치고 화분을 고정해요. 태풍에 강해져요.' },
+  pot: { name: '큰 화분과 새 흙', price: 5, add: 1, desc: '분갈이용. 흙이 덜 마르고 양분이 늘어요.' },
+  spray: { name: '친환경 해충 스프레이', price: 3, add: 2, desc: '진딧물을 한 번에 없애요 (2번).' },
+  wick: { name: '심지 급수기', price: 4, once: true, desc: '설치하면 흙이 너무 마르지 않게 자동으로 물을 보충해요.' },
+  lamp: { name: '식물 LED 등', price: 8, once: true, desc: '설치하면 빛 +20. 흐린 날에도 든든해요.' },
+};
+const PATHS = {
+  contest: { name: '교내 식물 대회', goal: '12주차 대회에서 크고 건강한 식물로 상 받기', act: '대회 준비',
+    actDesc: '잎을 닦고 성장 사진을 기록해요. 심사 점수가 올라요.' },
+  science: { name: '과학 탐구 보고서', goal: '지식 12 이상 모으고, 좋아하는 물·빛·양분 범위를 모두 밝히기', act: '비교 실험',
+    actDesc: '조건 하나만 바꾼 두 컵을 비교해요. 지식 +2' },
+  market: { name: '나눔 장터', goal: '친구 6명 이상, 용돈 20 이상 모으기', act: '모종·씨앗 나눔',
+    actDesc: '곁순이나 씨앗을 친구에게 나눠요. 친구 +1, 용돈 +2' },
+};
+
+// ================= 게임 로직 (DOM 없음) =================
+function newGame(k, pet) {
+  const p = PLANTS[k];
+  const s = { k, p, pet, week: 1, ap: 3, coins: 8, water: Math.round(mid(p.ideal.water) + 5), nutri: 50, health: 80, growth: 0,
+    spot: 'center', potBig: false, staked: false, wick: false, lamp: false, items: { fert: 0, compost: 0, stake: 0, pot: 0, spray: 0 },
+    aphid: 0, mildew: 0, rot: 0, known: { aphid: false, mildew: false }, bands: { water: false, light: false, nutri: false },
+    measured: null, checkedWeek: 0, knowledge: 0, friends: 0, contest: 0, path: null, pruned: false, treated: false,
+    weather: 'sun', forecast: 'sun', usedEvents: [], log: [], cur: [],
+    stats: { waterOk: 0, pests: 0, typhoon: 0, typhoonHit: 0, low: 80, bandsWeek: 0 } };
+  s.forecast = rollWeather(s, 2);
+  return s;
+}
+function rollWeather(s, wk) {
+  const pool = Object.entries(WEATHER).filter(([k]) => k !== 'typhoon' || (wk >= 4 && wk < WEEKS && !s.stats.typhoon));
+  let r = Math.random() * pool.reduce((a, [, v]) => a + v.w, 0);
+  for (const [k, v] of pool) if ((r -= v.w) < 0) return k;
+  return 'sun';
+}
+const lightOf = s => clamp(Math.round(SPOTS[s.spot].light + WEATHER[s.weather].light * SPOTS[s.spot].f + (s.lamp ? 20 : 0)));
+const note = (s, t) => { s.cur.push(t); return t; };
+
+function beginWeek(s) {
+  s.weather = s.forecast === 'typhoon' || Math.random() < .8 ? s.forecast : rollWeather(s, s.week); // 예보는 80% 정확, 태풍 예보는 항상 정확
+  if (s.weather === 'typhoon') s.stats.typhoon = 1;
+  s.forecast = rollWeather(s, s.week + 1);
+  s.ap = 3; s.coins += 2; s.pruned = false; s.treated = false; s.cur = [];
+}
+
+function endWeek(s) {
+  const p = s.p, W = WEATHER[s.weather], sp = SPOTS[s.spot], lines = [], before = { water: s.water, nutri: s.nutri, health: s.health, growth: s.growth };
+  let dh = 0;
+  let mult = W.decay * (s.potBig ? .85 : 1) * (s.weather === 'heat' && sp.hot ? 1.2 : 1);
+  s.water = clamp(s.water - p.thirst * mult);
+  if (sp.outdoor && W.rain) { s.water = clamp(s.water + W.rain); lines.push(['창밖 화분이 비를 흠뻑 맞았어요.', '']); }
+  if (s.wick && s.water < p.ideal.water[0]) { s.water = p.ideal.water[0]; lines.push(['심지 급수기가 마른 흙에 물을 보충했어요.', 'good']); }
+  s.nutri = clamp(s.nutri - 5);
+  const light = lightOf(s);
+  if (s.weather === 'typhoon') {
+    if (!sp.outdoor) lines.push(['태풍이 지나갔지만 교실 안이라 안전했어요.', 'good']);
+    else if (s.staked) { dh -= 5; lines.push(['태풍이 몰아쳤지만 지지대와 끈 덕분에 버텼어요.', 'good']); }
+    else { dh -= 25; s.growth = clamp(s.growth - 8); s.stats.typhoonHit++; lines.push(['태풍에 줄기가 꺾이고 잎이 찢어졌어요!', 'bad']); }
+  }
+  // 숨은 병충해: 관찰하지 않으면 심해질 때까지 모를 수 있음
+  if (s.aphid > 0) { if (!s.treated) s.aphid = Math.min(4, s.aphid + 1); }
+  else if (Math.random() < .06 + (sp.outdoor ? .12 : 0) + (s.nutri > 70 ? .08 : 0)) s.aphid = 1;
+  const humid = ['rain', 'cloud', 'typhoon'].includes(s.weather) || s.water > 75;
+  if (s.mildew > 0) { if (humid && !s.pruned) s.mildew = Math.min(4, s.mildew + 1); }
+  else if (humid && s.water > 60 && !s.pruned && Math.random() < .2) s.mildew = 1;
+  s.rot = s.water > p.ideal.water[1] + 10 ? s.rot + 1 : Math.max(0, s.rot - 1);
+  if (s.aphid >= 3 && !s.known.aphid) { s.known.aphid = true; lines.push(['새순에 벌레가 우글우글한 게 눈에 띄어요!', 'bad']); }
+  if (s.mildew >= 3 && !s.known.mildew) { s.known.mildew = true; lines.push(['잎이 하얀 가루로 덮이기 시작했어요!', 'bad']); }
+  // 환경이 맞는지에 따라 건강 변화. 증상은 원인을 바로 알려 주지 않음 (가뭄과 과습은 둘 다 잎이 처짐)
+  const symptom = { water: ['잎이 축 처졌어요.', '잎이 처지고 흙에서 퀴퀴한 냄새가 나요.'], light: ['줄기가 창 쪽으로 휘고 가늘게 웃자라요.', '잎 가장자리가 하얗게 탔어요.'], nutri: ['아래쪽 잎이 연노랗게 변했어요.', '잎 끝이 갈색으로 타들어 가요.'] };
+  const vals = { water: s.water, light, nutri: s.nutri };
+  let ok = 0;
+  for (const key of ['water', 'light', 'nutri']) {
+    const [lo, hi] = p.ideal[key], v = vals[key];
+    if (v < lo) { dh -= Math.min(12, Math.ceil((lo - v) / 3)); lines.push([symptom[key][0], 'bad']); }
+    else if (v > hi) { dh -= Math.min(12, Math.ceil((v - hi) / 3)); lines.push([symptom[key][1], 'bad']); }
+    else { dh += 3; ok++; if (key === 'water') s.stats.waterOk++; }
+  }
+  if (ok === 3) lines.push(['물, 빛, 양분이 모두 딱 맞았는지 잎이 반짝반짝해요.', 'good']);
+  dh -= 3 * s.aphid + 3 * s.mildew + (s.rot >= 2 ? 6 : 0);
+  s.health = clamp(s.health + dh);
+  const g = s.health >= 70 ? 9 : s.health >= 45 ? 6 : s.health >= 25 ? 2 : 0;
+  s.growth = clamp(s.growth + (g + (s.potBig && g ? 1 : 0)) * p.speed);
+  s.stats.low = Math.min(s.stats.low, s.health);
+  s.log.push({ week: s.week, weather: s.weather, entries: [...s.cur, ...lines.map(l => l[0])] });
+  const res = { week: s.week, weather: s.weather, lines, before };
+  s.week++;
+  return res;
+}
+
+function pest(s, n, txt) {
+  const had = s.aphid; s.aphid = Math.max(0, s.aphid - n); s.treated = true;
+  if (had && !s.aphid) { s.stats.pests++; s.known.aphid = false; }
+  return txt + (!had ? ' 그런데 벌레가 없었어요.' : s.aphid ? ' 아직 조금 남았어요.' : ' 진딧물이 모두 사라졌어요!');
+}
+function revealBand(s) {
+  const k = ['water', 'light', 'nutri'].find(x => !s.bands[x]); if (!k) return '';
+  s.bands[k] = true;
+  if (!s.stats.bandsWeek && ['water', 'light', 'nutri'].every(x => s.bands[x])) s.stats.bandsWeek = s.week;
+  const [lo, hi] = s.p.ideal[k];
+  return `${s.p.name}는 ${STAT[k]} ${lo}~${hi} 사이를 좋아한대요. 화면에 점선 칸으로 표시했어요.`;
+}
+function check(s) {
+  const p = s.p;
+  s.measured = { week: s.week, water: Math.round(s.water), nutri: Math.round(s.nutri) };
+  if (s.checkedWeek !== s.week) { s.knowledge++; s.checkedWeek = s.week; }
+  const out = [`흙 수분 ${s.measured.water}, 양분 ${s.measured.nutri}을(를) 기록했어요.`];
+  const vals = { water: s.water, light: lightOf(s), nutri: s.nutri };
+  for (const k of ['water', 'light', 'nutri']) if (s.bands[k]) {
+    const [lo, hi] = p.ideal[k];
+    if (vals[k] < lo) out.push(p.hints[k][0]); else if (vals[k] > hi) out.push(p.hints[k][1]);
+  }
+  if (!s.bands.water || !s.bands.nutri) out.push('이 수치가 알맞은지는 도서관에서 조사해야 알 수 있어요.');
+  if (s.aphid) { s.known.aphid = true; out.push('잎 뒷면에 진딧물이 붙어 있어요!'); }
+  if (s.mildew) { s.known.mildew = true; out.push('잎에 하얀 가루(흰가루병)가 보여요.'); }
+  if (s.rot >= 2) out.push('흙에서 썩은 냄새가 나요. 뿌리가 상하고 있어요. 물을 줄여야 해요.');
+  if (!s.aphid && !s.mildew && s.rot < 2) out.push('벌레나 병은 보이지 않아요.');
+  return out.join(' ');
+}
+
+const ACTIONS = [
+  { id: 'water', name: '물 주기', desc: '양을 골라 물을 줘요.', opts: () => [
+    { label: '조금 (컵 하나)', run: s => { s.water = clamp(s.water + 15); return '물을 한 컵 줬어요. 겉흙이 촉촉해졌어요.'; } },
+    { label: '흠뻑 (받침으로 흘러나올 때까지)', run: s => { s.water = clamp(s.water + 35); return '흙 전체가 흠뻑 젖었어요. 받침에 고인 물은 버렸어요.'; } },
+    { label: '저면관수 (물받침에 부어 빨아올리게)', sub: '흙이 물을 가득 머금어요', run: s => { s.water = Math.max(s.water, 72); return '흙이 아래에서부터 물을 가득 빨아올렸어요.'; } }] },
+  { id: 'check', name: '흙과 잎 관찰', desc: '물·양분 수치를 재고 숨은 병충해를 찾아요.', run: check },
+  { id: 'research', name: '도서관 조사', desc: '좋아하는 물·빛·양분 범위를 책에서 찾아요.', run: s => {
+    s.knowledge++; return revealBand(s) || `새로운 사실: ${pick(s.p.facts)}`; } },
+  { id: 'move', name: '화분 옮기기', desc: '자리마다 빛과 날씨 영향이 달라요.', opts: s => Object.entries(SPOTS).map(([k, v]) => ({
+    label: `${v.name} (기본 빛 ${v.light})`, sub: v.desc, need: s => s.spot === k ? '지금 여기에 있어요' : '',
+    run: s => { s.spot = k; return `${v.name}(으)로 화분을 옮겼어요. 이번 주 예상 빛은 ${lightOf(s)}이에요.`; } })) },
+  { id: 'feed', name: '양분 주기', desc: '상점에서 산 비료나 퇴비를 줘요.', need: s => s.items.fert || s.items.compost ? '' : '상점에서 비료를 사야 해요', opts: () => [
+    { label: '액체 비료를 물에 묽게 타서', sub: '설명서대로 물 1L에 5mL', need: s => s.items.fert ? '' : '액체 비료가 없어요', run: s => { s.items.fert--; s.nutri = clamp(s.nutri + 22); return '뿌리가 양분을 천천히 흡수하고 있어요.'; } },
+    { label: '액체 비료 원액 그대로', sub: '빨리 자라라고!', need: s => s.items.fert ? '' : '액체 비료가 없어요', run: s => { s.items.fert--; s.nutri = clamp(s.nutri + 40); s.health = clamp(s.health - 12); return '너무 진한 비료가 오히려 뿌리의 물을 빼앗았어요(삼투). 잎 끝이 갈색으로 타요.'; } },
+    { label: '지렁이 퇴비 섞기', sub: '순하고 오래가요', need: s => s.items.compost ? '' : '퇴비가 없어요', run: s => { s.items.compost--; s.nutri = clamp(s.nutri + 15); s.health = clamp(s.health + 3); return '퇴비가 흙을 폭신하게 만들고 양분을 천천히 내줘요.'; } }] },
+  { id: 'prune', name: '잎 정리', desc: '누렇거나 병든 잎을 떼어 바람이 통하게 해요.', run: s => {
+    s.pruned = true;
+    if (s.growth < 25) { s.growth = clamp(s.growth - 3); return '아직 어린 식물이라 잎을 떼니 성장이 조금 늦어졌어요.'; }
+    const had = s.mildew; s.mildew = Math.max(0, s.mildew - 2); if (!s.mildew) s.known.mildew = false;
+    s.health = clamp(s.health + 4); return had ? (s.mildew ? '병든 잎을 떼어냈어요. 흰가루병이 조금 남았어요.' : '병든 잎을 떼어내 흰가루병을 막았어요.') : '누런 잎을 떼어 바람이 잘 통해요.'; } },
+  { id: 'pest', name: '벌레 잡기', desc: '진딧물 같은 해충을 없애요.', opts: () => [
+    { label: '테이프로 살살 떼어내기', run: s => pest(s, 2, '테이프로 벌레를 떼어냈어요.') },
+    { label: '친환경 스프레이 뿌리기', need: s => s.items.spray ? '' : '스프레이가 없어요', run: s => { s.items.spray--; return pest(s, 9, '스프레이를 골고루 뿌렸어요.'); } },
+    { label: '화단에서 무당벌레 데려오기', sub: '천적을 이용해요. 성공은 운에 달렸어요', run: s => { s.knowledge++; return Math.random() < .55 ? pest(s, 9, '무당벌레가 진딧물을 먹어 치웠어요!') : pest(s, 0, '무당벌레를 못 찾았어요. 대신 화단 곤충을 관찰했어요.'); } }] },
+  { id: 'stake', name: '지지대·끈 고정', desc: '줄기를 받치고 화분을 고정해요.', need: s => s.staked ? '이미 설치했어요' : !s.items.stake ? '상점에서 지지대를 사야 해요' : '',
+    run: s => { s.items.stake--; s.staked = true; s.health = clamp(s.health + 3); return FLOWERING.has(s.k) ? '지지대를 세우고 끈을 8자로 느슨하게 묶었어요. 줄기가 굵어져도 다치지 않아요.' : '끈으로 화분을 화분대에 단단히 고정했어요.'; } },
+  { id: 'repot', name: '분갈이', desc: '큰 화분으로 옮겨 심어요.', need: s => s.potBig ? '이미 큰 화분이에요' : !s.items.pot ? '상점에서 큰 화분을 사야 해요' : '',
+    run: s => { s.items.pot--; s.potBig = true; s.nutri = clamp(s.nutri + 20); s.health = clamp(s.health - 5); return '큰 화분으로 옮겼어요. 며칠 몸살을 앓겠지만 뿌리가 뻗을 공간이 생겼어요.'; } },
+  { id: 'job', name: '교실 도우미', desc: '칠판 지우기, 우유 나르기로 용돈을 벌어요.', run: s => {
+    const c = 3 + (s.friends >= 3 ? 1 : 0); s.coins += c; return `열심히 일하고 용돈 ${c}을(를) 받았어요.${c > 3 ? ' 친구들이 도와줘서 빨리 끝났어요.' : ''}`; } },
+  { id: 'talk', name: '친구와 수다', desc: '식물 이야기를 나눠요. 뭔가 얻을지도?', run: s => {
+    s.friends++; const r = Math.random();
+    if (r < .3 && !Object.values(s.bands).every(Boolean)) return '원예부 선배를 둔 친구가 알려 줬어요. ' + revealBand(s);
+    if (r < .55) { s.items.compost++; return '친구가 집에서 만든 퇴비 한 줌을 나눠 줬어요.'; }
+    return pick(['친구가 자기 식물 사진을 보여 줬어요. 서로 응원하기로 했어요.', '이름을 듣더니 친구가 깔깔 웃었어요. 친해졌어요.', '친구와 관찰일지를 바꿔 읽었어요.']); } },
+];
+const PATH_RUN = {
+  contest: s => { s.contest++; s.health = clamp(s.health + 2); return '잎을 깨끗이 닦고 성장 사진을 찍었어요. 대회 준비 점수 +1'; },
+  science: s => { s.knowledge += 2; return pick(['빛만 다르게 두고 나머지 조건은 똑같이 맞췄어요. 바꾸는 조건은 하나만! 이것이 변인 통제예요.', '물 양만 다르게 한 두 컵을 비교했어요. 결과를 표와 그래프로 정리했어요.', '같은 실험을 세 번 반복했어요. 여러 번 해야 결과를 믿을 수 있어요.']); },
+  market: s => { s.friends++; s.coins += 2; return '곁순과 씨앗을 친구에게 나눠 줬어요. 친구가 고맙다며 용돈을 보탰어요.'; },
+};
+function actionsFor(s) {
+  const list = ACTIONS.slice();
+  if (s.path) list.push({ id: 'path', name: PATHS[s.path].act, desc: PATHS[s.path].actDesc, special: true,
+    need: s => s.path === 'market' && s.growth < 40 ? '성장 40% 이후 가능해요' : '', run: PATH_RUN[s.path] });
+  return list;
+}
+function doAction(s, a, opt) {
+  if (s.ap < 1) return null;
+  s.ap--;
+  return note(s, `${a.name}: ${(opt || a).run(s)}`);
+}
+function buy(s, id) {
+  const it = ITEMS[id]; if (s.coins < it.price || (it.once && s[id])) return null;
+  s.coins -= it.price;
+  if (it.once) s[id] = true; else s.items[id] += it.add;
+  return note(s, `상점: ${it.name}을(를) 샀어요.${it.once ? ' 바로 설치했어요.' : ''}`);
+}
+
+// 돌발·친구 사건: run은 결과 문장을 돌려줌
+const EVENTS = [
+  { id: 'cat', cond: s => s.spot === 'window' || s.spot === 'outside', title: '고양이가 화분을 넘어뜨렸어요', text: '학교에 사는 고양이가 창틀에 올라왔다가 화분을 툭! 흙이 쏟아졌어요.',
+    tip: '옮겨 심은 뒤 물을 주면 흙이 뿌리에 착 달라붙어 뿌리가 빨리 자리를 잡아요.', choices: [
+      { label: '흙을 다시 채우고 꾹꾹 눌러 세우기', run: s => { s.health = clamp(s.health - 4); s.water = clamp(s.water - 10); return '뿌리가 다시 흙에 자리를 잡았어요.'; } },
+      { label: '흙을 채우고 물을 흠뻑 줘서 다지기', run: s => { s.health = clamp(s.health - 1); s.water = clamp(s.water + 15); return '물이 흙과 뿌리 사이 빈틈을 메워 줬어요.'; } },
+      { label: '쉬는 시간 끝나고 치우자', run: s => { s.health = clamp(s.health - 20); s.water = clamp(s.water - 20); return '드러난 뿌리가 바싹 말라 버렸어요.'; } }] },
+  { id: 'aphid', title: '개미가 줄지어 화분을 오르내려요', text: '개미 행렬이 줄기 위로 올라가요. 개미는 진딧물이 내놓는 단물을 좋아한대요.',
+    tip: '개미는 진딧물을 지켜 주고 단물을 얻어요. 개미가 보이면 진딧물을 의심해 보세요.', choices: [
+      { label: '개미를 따라가 잎 뒷면 확인하기', run: s => { s.aphid = Math.max(s.aphid, 2); s.known.aphid = true; s.knowledge++; return '역시! 새순 뒤에 진딧물이 숨어 있었어요. 이제 잡을 수 있어요.'; } },
+      { label: '개미만 손으로 털어내기', run: s => { s.aphid = Math.max(s.aphid, 2); return '개미는 사라졌지만 진짜 범인은 그대로 남았어요.'; } },
+      { label: '개미 구경하며 그냥 두기', run: s => { s.aphid = Math.max(s.aphid, 3); return '그사이 진딧물이 무럭무럭 늘었어요.'; } }] },
+  { id: 'snail', cond: s => s.spot === 'outside' || s.weather === 'rain', title: '잎에 구멍이 숭숭!', text: '비 온 다음 날, 잎에 구멍이 나 있고 반짝이는 자국이 남아 있어요. 범인은 달팽이!',
+    tip: '흙에 소금이 많아지면 뿌리가 물을 흡수하지 못해요. 바닷물이 들어온 논밭에서 농사가 어려운 이유예요.', choices: [
+      { label: '나무젓가락으로 집어 화단에 보내 주기', run: s => { s.health = clamp(s.health + 2); return '잎을 갉아 먹던 달팽이가 사라졌어요.'; } },
+      { label: '달팽이에게 소금 뿌리기', run: s => { s.health = clamp(s.health - 12); return '소금이 흙에 떨어져 뿌리가 물을 빨아들이기 힘들어졌어요.'; } },
+      { label: '귀여우니까 같이 키우기', run: s => { s.health = clamp(s.health - 10); s.growth = clamp(s.growth - 4); s.friends++; return '친구들은 좋아했지만, 달팽이가 매일 밤 잎을 먹어 치웠어요.'; } }] },
+  { id: 'holiday', title: '갑자기 4일 연휴!', text: '재량휴업일이 붙어서 이번 주는 학교에 하루만 와요. 행동력이 1로 줄어요.',
+    tip: '그늘에서는 잎에서 날아가는 물(증산)이 줄어서 물을 덜 써요.', choices: [
+      { label: '집에 가져가서 돌보기', run: s => { s.ap = 0; s.water = clamp(mid(s.p.ideal.water) + s.p.thirst); return '집에서 날마다 흙을 확인했어요. 대신 학교 행동은 못 해요.'; } },
+      { label: '물을 듬뿍 주고 사물함 위 그늘로', run: s => { s.ap = 1; s.water = clamp(s.water + 30); s.spot = 'back'; return '그늘에서 물을 아끼며 버티게 했어요. 다음 주에 자리를 다시 옮기는 걸 잊지 마세요.'; } },
+      { label: '설마 괜찮겠지', run: s => { s.ap = 1; s.water = clamp(s.water - 15); return '흙이 꽤 말라 버렸어요.'; } }] },
+  { id: 'ball', cond: s => !s.potBig, title: '축구공이 날아와 화분이 깨졌어요', text: '창밖에서 날아온 공에 화분이 와장창! 식물은 무사하지만 흙이 쏟아졌어요.',
+    tip: '뿌리가 공기에 오래 노출되면 금방 말라요. 옮겨 심을 땐 빠르게!', choices: [
+      { label: '용돈 5로 큰 화분 사서 옮겨 심기', need: s => s.coins >= 5 ? '' : '용돈이 부족해요', run: s => { s.coins -= 5; s.potBig = true; s.nutri = clamp(s.nutri + 15); s.health = clamp(s.health - 5); return '오히려 더 넓은 집이 생겼어요!'; } },
+      { label: '우유갑으로 임시 화분 만들기', run: s => { s.health = clamp(s.health - 6); s.knowledge++; return '바닥에 구멍을 뚫어 물 빠짐도 챙겼어요. 재활용 성공!'; } },
+      { label: '공 찬 친구에게 화분 사 달라고 하기', run: s => { s.potBig = true; s.friends = Math.max(0, s.friends - 1); s.health = clamp(s.health - 5); return '큰 화분이 생겼지만 친구가 조금 서운해해요.'; } }] },
+  { id: 'teacher', title: '선생님의 깜짝 선물', text: '"정말 잘 키우고 있구나!" 선생님이 원예 용품 상자를 열어 하나 고르라고 하세요.',
+    tip: '퇴비는 낙엽이나 음식물 같은 유기물이 미생물에게 분해된 거예요.', choices: [
+      { label: '지렁이 퇴비 두 봉지', run: s => { s.items.compost += 2; return '퇴비 2개를 받았어요.'; } },
+      { label: '지지대와 끈', run: s => { s.items.stake++; return '지지대를 받았어요. 행동에서 설치할 수 있어요.'; } },
+      { label: '친구에게 양보하기', run: s => { s.friends += 2; return '친구가 정말 고마워했어요. 친구 +2'; } }] },
+  { id: 'bee', cond: s => s.spot !== 'back', title: '꿀벌이 날아왔어요', text: '열린 창문으로 꿀벌 한 마리가 들어와 식물 주위를 빙빙 돌아요.',
+    tip: '꽃가루가 암술에 닿는 것을 꽃가루받이(수분)라고 해요. 상추처럼 잎을 먹는 채소는 꽃이 피기 전에 수확해요.', choices: [
+      { label: '창문을 열어 두고 조용히 지켜보기', run: s => { const b = FLOWERING.has(s.k) && s.growth >= 50; s.growth = clamp(s.growth + (b ? 8 : 1)); return b ? '벌이 꽃가루를 옮겨 줬어요! 열매와 씨앗이 잘 맺힐 거예요.' : '아직 꽃이 없어서 벌은 금방 날아갔어요.'; } },
+      { label: '놀라서 책으로 쫓아내기', run: s => { s.health = clamp(s.health - 3); return '휘두른 책에 잎 하나가 꺾였어요.'; } },
+      { label: '붓으로 직접 꽃가루 옮겨 보기', run: s => { s.knowledge++; const b = FLOWERING.has(s.k) && s.growth >= 50; s.growth = clamp(s.growth + (b ? 5 : 0)); return b ? '붓으로 꽃 안쪽을 쓸어 꽃가루받이를 도왔어요.' : '아직 꽃이 없었지만 꽃의 구조를 공부했어요.'; } }] },
+  { id: 'heatwave', title: '에어컨이 고장 났어요', text: '교실이 찜통이에요. 흙이 평소보다 훨씬 빨리 말라요.',
+    tip: '기온이 높으면 흙과 잎에서 물이 훨씬 빨리 날아가요.', choices: [
+      { label: '아침 일찍 와서 물 주기 (행동력 1)', need: s => s.ap ? '' : '행동력이 없어요', run: s => { s.ap--; s.water = clamp(s.water + 15); return '시원할 때 준 물 덕분에 하루를 버텼어요.'; } },
+      { label: '선풍기 바람 쐬어 주기', run: s => { s.water = clamp(s.water - 10); return '시원해 보였지만 바람 때문에 흙이 더 빨리 말랐어요.'; } },
+      { label: '반그늘로 옮겨 쉬게 하기', run: s => { s.spot = s.spot === 'back' ? 'back' : 'center'; s.water = clamp(s.water - 5); return '더위를 피해 잎이 덜 처졌어요.'; } }] },
+];
+const FRIEND_EVENTS = [
+  { id: 'partner', title: '짝꿍의 부탁', text: '"이번 주에 내 식물도 같이 봐 줄 수 있어?" 짝꿍이 학원 때문에 바쁘대요.',
+    tip: '함께 키우면 서로의 실수를 줄일 수 있어요.', choices: [
+      { label: '좋아, 내가 다 돌봐 줄게 (행동력 1)', need: s => s.ap ? '' : '행동력이 없어요', run: s => { s.ap--; s.friends += 2; return '짝꿍이 엄청 고마워했어요. 친구 +2'; } },
+      { label: '같이 관찰일지 쓰면서 돌보자 (행동력 1)', need: s => s.ap ? '' : '행동력이 없어요', run: s => { s.ap--; s.friends++; s.knowledge++; return '두 식물을 비교하며 새로운 점을 발견했어요.'; } },
+      { label: '미안, 이번 주는 나도 바빠', run: s => { s.friends = Math.max(0, s.friends - 1); return '짝꿍이 조금 서운한 표정이에요.'; } }] },
+  { id: 'secretwater', title: '짝꿍이 몰래 물을 줬대요', text: '"목말라 보여서!" 짝꿍이 오늘 아침 물을 한 컵 가득 부었대요. 나도 어제 줬는데...',
+    tip: '여럿이 함께 키울 때는 기록이 중요해요. 물을 두 번 주는 실수를 막을 수 있어요.', choices: [
+      { label: '물받침에 고인 물 바로 비우기', run: s => { s.water = clamp(s.water + 20); return '넘친 물을 버려서 뿌리가 숨쉴 틈이 생겼어요.'; } },
+      { label: '고맙다고 하고 그대로 두기', run: s => { s.water = clamp(s.water + 30); s.friends++; return '짝꿍은 뿌듯해했지만 흙이 꽤 질척해졌어요.'; } },
+      { label: '물 주기 당번표 만들어 붙이기', run: s => { s.water = clamp(s.water + 20); s.friends++; s.knowledge++; return '이제 누가 언제 물을 줬는지 한눈에 보여요.'; } }] },
+  { id: 'compete', title: '옆 반과 키 키우기 대결!', text: '옆 반 친구가 자기 식물이 더 크다고 자랑해요.',
+    tip: '빠르게 웃자란 식물은 줄기가 약해요. 튼튼하게 자라는 게 더 중요해요.', choices: [
+      { label: '비료를 두 배로 주기', run: s => { s.nutri = clamp(s.nutri + 35); s.health = clamp(s.health - 10); return '갑자기 많은 비료에 뿌리가 놀랐어요.'; } },
+      { label: '키보다 건강! 하던 대로', run: s => { s.health = clamp(s.health + 3); return '꾸준한 관리 덕분에 잎에 윤이 나요.'; } },
+      { label: '옆 반 친구에게 비법 묻기', run: s => { s.friends++; return '친구가 비법을 알려 줬어요. ' + (revealBand(s) || '서로 정보를 나눴어요.'); } }] },
+  { id: 'music', title: '음악을 들려주면 잘 자랄까?', text: '친구가 "음악을 들려주면 식물이 쑥쑥 자란대!"라며 스피커를 가져왔어요.',
+    tip: '음악의 효과는 아직 과학적으로 확실히 밝혀지지 않았어요. 매일 관찰하는 게 가장 확실한 비법이에요.', choices: [
+      { label: '클래식 틀어 주기', run: s => { s.friends++; return '식물은 평소와 같았어요. 그래도 교실 분위기는 좋아졌어요.'; } },
+      { label: '음악 있는 컵 / 없는 컵 비교 실험 제안하기', run: s => { s.knowledge += 2; return '실험해 보니 뚜렷한 차이가 없었어요. 직접 확인하는 게 과학이에요!'; } },
+      { label: '그냥 관심 없다고 하기', run: s => { s.friends = Math.max(0, s.friends - 1); return '친구가 머쓱해했어요.'; } }] },
+];
+const LUCK = [
+  s => { s.coins += 5; return '할머니가 용돈을 주셨어요. 용돈 +5'; },
+  s => { s.items.fert += 2; return '과학 선생님이 남은 액체 비료를 나눠 주셨어요. (비료 2번 분량)'; },
+  s => { s.coins += 3; s.friends++; return '대청소 날 열심히 해서 칭찬 스티커를 받았어요. 용돈 +3, 친구 +1'; },
+  s => { s.knowledge++; return '도서관에서 우연히 식물 책을 발견했어요. ' + (revealBand(s) || pick(s.p.facts)); },
+  s => { s.items.spray++; return '보건 선생님이 친환경 스프레이를 하나 주셨어요.'; },
+];
+const SLICES = ['calm', 'event', 'friend', 'calm', 'event', 'luck', 'calm', 'event'];
+const SLICE_NAME = { calm: '평온한 한 주', event: '돌발 사건', friend: '친구 사건', luck: '행운' };
+
+function drawEvent(s, type) {
+  const pool = (type === 'friend' ? FRIEND_EVENTS : EVENTS).filter(e => !s.usedEvents.includes(e.id) && (!e.cond || e.cond(s)));
+  const e = pool.length ? pick(pool) : null;
+  if (e) s.usedEvents.push(e.id);
+  return e;
+}
+
+function ending(s) {
+  const dead = s.health <= 0, g = Math.round(s.growth), h = Math.round(s.health), allBands = Object.values(s.bands).every(Boolean);
+  let title, line;
+  if (s.path === 'contest') {
+    const score = dead ? 0 : Math.round(g * .6 + h * .4 + s.contest * 3);
+    [title, line] = score >= 100 ? ['대회 금상!', '심사위원이 잎 하나하나까지 감탄했어요.'] : score >= 85 ? ['대회 은상', '크고 건강하게 잘 키웠어요.'] : score >= 70 ? ['대회 동상', '조금만 더 건강했다면 더 높은 상도 노려볼 만했어요.'] : ['대회 참가상', '대회에 끝까지 나간 것만으로도 멋져요.'];
+    line += ` (심사 점수 ${score})`;
+  } else if (s.path === 'science') {
+    [title, line] = s.knowledge >= 12 && allBands ? ['탐구 보고서 최우수상!', '관찰과 실험으로 이 식물의 비밀을 밝혀냈어요.'] : s.knowledge >= 8 ? ['탐구 보고서 우수상', '꼼꼼하게 기록했어요.' + (allBands ? '' : ' 좋아하는 범위를 다 밝혔다면 최우수상이었을 거예요.')] : ['보고서가 아직 빈약해요', '관찰과 조사를 더 자주 했다면 좋았을 거예요.'];
+  } else {
+    [title, line] = s.friends >= 6 && s.coins >= 20 ? ['나눔 장터의 스타!', '친구들이 모두 내 모종을 키우고 있어요.'] : s.friends >= 4 ? ['따뜻한 나눔', '여러 친구와 식물을 나눴어요.'] : ['조용한 장터', '친구들과 더 많이 이야기했다면 장터가 북적였을 거예요.'];
+  }
+  const plant = dead ? `${s.pet}는 끝내 시들어 버렸어요.` : g >= 85 ? `${s.p.goal}.` : g >= 60 ? `${s.pet}는 ${stageName(s.p, g)}까지 자랐어요.` : `${s.pet}는 아직 ${stageName(s.p, g)} 단계예요.`;
+  return { dead, g, h, title: dead ? '시들어 버렸어요' : title, line: dead ? '어느 주에 무엇이 문제였는지 관찰일지에서 찾아보세요.' : line, plant };
+}
+function stageName(p, g) { return g < 8 ? '싹이 막 튼 단계' : g < 30 ? '새싹' : g < 55 ? '잎이 자라는 중' : g < 80 ? p.stages[0] : p.stages[1]; }
+
+const ACHV = [
+  { id: 'harvest', name: '첫 수확', desc: '성장 85% 이상으로 12주 완주', test: (s, e) => !e.dead && s.growth >= 85 },
+  { id: 'bug', name: '벌레 박사', desc: '해충을 두 번 이상 퇴치', test: s => s.stats.pests >= 2 },
+  { id: 'storm', name: '날씨 예보관', desc: '태풍을 피해 없이 넘기기', test: s => s.stats.typhoon && !s.stats.typhoonHit },
+  { id: 'water', name: '물 조절의 달인', desc: '10주 이상 물을 알맞게 유지', test: s => s.stats.waterOk >= 10 },
+  { id: 'rich', name: '알뜰 농부', desc: '용돈 25 이상 모으기', test: s => s.coins >= 25 },
+  { id: 'scholar', name: '꼼꼼한 조사왕', desc: '6주차 안에 좋아하는 환경 모두 밝히기', test: s => s.stats.bandsWeek && s.stats.bandsWeek <= 6 },
+  { id: 'comeback', name: '기사회생', desc: '건강 20 아래로 떨어졌다가 살아서 완주', test: (s, e) => !e.dead && s.stats.low < 20 },
+  { id: 'gold', name: '금상 수상', desc: '식물 대회 금상', test: (s, e) => e.title === '대회 금상!' },
+  { id: 'gardener', name: '만능 정원사', desc: '다섯 식물 모두 첫 수확 달성', test: () => false },
+];
+
+// ================= 그림 =================
+function tint(h, hue = 120) { const t = h / 100; return { leaf: `hsl(${Math.round(40 + t * (hue - 40))} ${Math.round(42 + t * 18)}% ${Math.round(48 - t * 12)}%)`, stem: `hsl(${Math.round(40 + t * (hue - 40))} ${Math.round(38 + t * 14)}% ${Math.round(34 - t * 6)}%)` }; }
+function E(cx, cy, rx, ry, rot, fill) { return `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" transform="rotate(${rot.toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="${fill}"/>`; }
+function leaf(x, y, len, ang, fill, wide = 4.2) { const r = ang * Math.PI / 180; return E(x + Math.cos(r) * len / 2, y + Math.sin(r) * len / 2, len / 2, len / wide, ang, fill); }
+const C = (x, y, r, f) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${f}"/>`;
+const stake = x => `<line x1="${x}" y1="182" x2="${x}" y2="34" stroke="var(--stake)" stroke-width="3" stroke-linecap="round"/>`;
+const POT = '<path d="M66 186 L134 186 L127 232 L73 232 Z" fill="var(--pot)"/><rect x="60" y="176" width="80" height="13" rx="3" fill="var(--pot-rim)"/><ellipse cx="100" cy="178" rx="36" ry="3.5" fill="var(--soil)"/>';
+
+function drawPlant(k, g, h, o = {}) {
+  const d = h < 30 ? 38 : h < 55 ? 16 : 0;
+  const R = a => -25 + d + a, L = a => 205 - d - a;
+  let s = '';
+  if (g < 8 && FLOWERING.has(k)) {
+    const { leaf: lc, stem } = tint(h); const top = 176 - (6 + g * 2);
+    s += `<path d="M100 178 L100 ${top}" stroke="${stem}" stroke-width="3" stroke-linecap="round"/>` + leaf(100, top, 10, R(-10), lc, 2.6) + leaf(100, top, 10, L(-10), lc, 2.6);
+  } else if (k === 'tomato') {
+    const { leaf: lc, stem } = tint(h); const H = 18 + g * 1.25, top = 178 - H;
+    if (o.staked) s += stake(120);
+    s += `<path d="M100 178 Q94 ${178 - H / 2} 100 ${top}" stroke="${stem}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+    const n = 1 + Math.floor(g / 11), len = 16 + g * .12;
+    for (let i = 0; i < n; i++) { const y = 178 - H * (i + 1) / (n + 1); s += leaf(97, y, len, i % 2 ? L(0) : R(0), lc); }
+    s += leaf(100, top, 11, R(-30), lc) + leaf(100, top, 11, L(-30), lc);
+    if (g >= 55) [[-15, 22], [13, 36], [-9, 52]].forEach(([dx, dy]) => s += C(100 + dx, top + dy, 3.2, '#F0C21E'));
+    if (g >= 72) {
+      const n2 = Math.min(9, 1 + Math.floor((g - 72) / 3.2)), col = h > 40 ? (g >= 88 ? '#D8352A' : '#E8862C') : '#9A6B3B';
+      const spots = [[88, 40], [113, 58], [91, 80]];
+      for (let i = 0; i < n2; i++) { const [cx, cy] = spots[i % 3], j = Math.floor(i / 3); s += C(cx + (j - 1) * 9, top + cy + (j % 2) * 9 + d / 3, 6, col); }
+    }
+  } else if (k === 'sunflower') {
+    const { leaf: lc, stem } = tint(h); const H = 20 + g * 1.15, top = 178 - H;
+    if (o.staked) s += stake(112);
+    s += `<path d="M100 178 L100 ${top}" stroke="${stem}" stroke-width="6" stroke-linecap="round"/>`;
+    const n = 1 + Math.floor(g / 14), len = 22 + g * .18;
+    for (let i = 0; i < n; i++) { const y = 178 - (H - 10) * (i + 1) / (n + 1); s += leaf(100, y, len, i % 2 ? L(5) : R(5), lc, 2.8); }
+    if (g >= 55 && g < 78) s += C(100, top, 7, stem);
+    if (g >= 78) {
+      const r = 9 + (g - 78) * .6, pc = h > 40 ? '#F2BE22' : '#C4A04C', cy = top + d / 2;
+      for (let i = 0; i < 16; i++) { const a = i * 22.5, rr = a * Math.PI / 180; s += E(100 + Math.cos(rr) * (r + 7), cy + Math.sin(rr) * (r + 7), 9, 3.8, a, pc); }
+      s += C(100, cy, r, '#6A4324');
+    }
+  } else if (k === 'lettuce') {
+    const n = 3 + Math.floor(g / 9), L0 = 14 + g * .48;
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1), ang = -165 + 150 * t, len = L0 * (1 - .32 * Math.abs(ang + 90) / 75) * (i % 2 ? .85 : 1);
+      s += leaf(100, 176, len, ang + (ang < -90 ? -d / 2 : d / 2), tint(clamp(h + (i % 2 ? 8 : -4)), 105).leaf, 2.5);
+    }
+  } else if (k === 'succulent') {
+    const sc = .35 + g / 100 * .75;
+    if (g >= 85) s += `<path d="M104 160 Q118 120 128 96" stroke="${tint(h, 150).stem}" stroke-width="2.5" fill="none"/>` + C(128, 94, 4, '#EE8A3A') + C(124, 103, 3.4, '#EE8A3A') + C(120, 112, 3, '#EE8A3A');
+    [[7, 36, -6], [6, 26, 6], [4, 16, 14]].forEach(([n, l, light], layer) => {
+      for (let i = 0; i < n; i++) {
+        const ang = -168 + 156 * i / (n - 1) + (layer ? 6 : 0), len = l * sc, w = len * .38;
+        s += `<path d="M0 0 Q${(len * .45).toFixed(1)} ${(-w).toFixed(1)} ${len.toFixed(1)} 0 Q${(len * .45).toFixed(1)} ${w.toFixed(1)} 0 0Z" transform="translate(100 ${(174 - layer * 3 * sc).toFixed(1)}) rotate(${(ang + (ang < -90 ? -d / 3 : d / 3)).toFixed(1)})" fill="${tint(clamp(h + light), 155).leaf}"/>`;
+      }
+    });
+  } else if (k === 'bean') {
+    const { leaf: lc, stem } = tint(h); const H = (o.staked ? 18 : 14) + g * (o.staked ? 1.3 : .9), top = 178 - H;
+    if (o.staked) s += stake(100);
+    let path = 'M100 178';
+    for (let y = 172; y >= top; y -= 6) path += ` L${(100 + Math.sin((178 - y) / 9) * 7).toFixed(1)} ${y}`;
+    s += `<path d="${path}" stroke="${stem}" stroke-width="2.6" fill="none" stroke-linejoin="round"/>`;
+    const n = 1 + Math.floor(g / 12), len = 13 + g * .1;
+    for (let i = 0; i < n; i++) {
+      const y = 178 - H * (i + 1) / (n + 1), x = 100 + Math.sin((178 - y) / 9) * 7, a = i % 2 ? L(0) : R(0);
+      s += leaf(x, y, len, a, lc, 2.4) + leaf(x, y, len * .8, a - 35, lc, 2.4) + leaf(x, y, len * .8, a + 35, lc, 2.4);
+    }
+    if (g >= 55) [[-12, 30], [12, 48], [-10, 70]].forEach(([dx, dy]) => s += C(100 + dx, Math.min(170, top + dy), 3, '#F3D3E2'));
+    if (g >= 74) {
+      const n2 = Math.min(6, 1 + Math.floor((g - 74) / 4.5)), pc = h > 40 ? '#7FAE4E' : '#A99A5C';
+      for (let i = 0; i < n2; i++) { const side = i % 2 ? -1 : 1; s += E(100 + side * 16, Math.min(165, top + 40 + i * 13), 3.6, 13, side * 18, pc); }
+    }
+  }
+  // 눈으로 보이는 단서: 심해진 진딧물(작은 점), 흰가루병(하얀 얼룩)
+  const top = 172 - Math.max(30, g * (k === 'lettuce' || k === 'succulent' ? .5 : 1.1));
+  for (let i = 0; i < (o.aphid >= 2 ? o.aphid * 4 : 0); i++) s += C(100 + Math.sin(i * 2.4) * 22, top + 8 + ((i * 37) % 45), 1.8, '#6F9A2C');
+  for (let i = 0; i < (o.mildew >= 2 ? o.mildew * 3 : 0); i++) s += C(100 + Math.cos(i * 1.9) * 24, top + 12 + ((i * 29) % 50), 2.6, 'rgba(255,255,255,.85)');
+  return `<svg viewBox="0 0 200 236" role="img" aria-label="${PLANTS[k].name} 그림">${s}${POT}</svg>`;
+}
+function wIcon(k) {
+  const sun = '<circle cx="12" cy="12" r="5" fill="var(--sun)"/>' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<line x1="12" y1="2.5" x2="12" y2="5" stroke="var(--sun)" stroke-width="2" stroke-linecap="round" transform="rotate(${a} 12 12)"/>`).join('');
+  const cloud = '<path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.3 3.3 0 0 0 7 18z" fill="var(--muted)"/>';
+  const body = { sun, heat: sun + '<circle cx="12" cy="12" r="2" fill="var(--danger)"/>', cloud,
+    rain: '<path d="M7 14h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.3 3.3 0 0 0 7 14z" fill="var(--muted)"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3" stroke="var(--water)" stroke-width="2" stroke-linecap="round"/>',
+    typhoon: '<path d="M12 12m-2 0a2 2 0 1 0 4 0a5 5 0 0 0-10 0a8 8 0 0 0 16 0" fill="none" stroke="var(--event)" stroke-width="2.2" stroke-linecap="round"/>' }[k];
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+}
+
+// ================= 화면 =================
+if (typeof document !== 'undefined') (() => {
+  const $ = id => document.getElementById(id);
+  let G = null, tab = 'act';
+  const store = { get() { try { return JSON.parse(localStorage.getItem('sprout-life-v2')) || { got: [], grown: [] }; } catch { return { got: [], grown: [] }; } },
+    set(v) { try { localStorage.setItem('sprout-life-v2', JSON.stringify(v)); } catch {} } };
+
+  function renderPick() {
+    $('plants').innerHTML = Object.entries(PLANTS).map(([k, p]) => `
+      <button class="pcard" data-plant="${k}">
+        <div class="pic">${drawPlant(k, 92, 92, { staked: true })}</div>
+        <div class="nm"><b>${p.name}</b><span class="lvl">${p.lvl}</span></div>
+        <small>${p.desc}</small>
+        <div class="tags">${p.tags.map(t => `<span>${t}</span>`).join('')}</div>
+      </button>`).join('');
+    const got = store.get().got;
+    $('achv').innerHTML = ACHV.map(a => `<div class="${got.includes(a.id) ? 'got' : ''}"><b>${got.includes(a.id) ? a.name : '???'}</b><small>${a.desc}</small></div>`).join('');
+  }
+
+  function renderHud() {
+    const s = G;
+    $('hud').innerHTML = `
+      <div><small>주차</small><b>${Math.min(s.week, WEEKS)}</b><small>/ ${WEEKS}</small></div>
+      <div>${wIcon(s.weather)}<small>이번 주</small><b>${WEATHER[s.weather].name}</b></div>
+      <div>${wIcon(s.forecast)}<small>다음 주 예보</small><b>${WEATHER[s.forecast].name}</b></div>
+      <div><small>용돈</small><b>${s.coins}</b></div>
+      <div><small>친구</small><b>${s.friends}</b><small>지식</small><b>${s.knowledge}</b></div>
+      <div aria-label="행동력 ${s.ap}"><small>행동력</small><span class="ap">${[0, 1, 2].map(i => `<i class="${i < s.ap ? 'on' : ''}"></i>`).join('')}</span></div>`;
+  }
+
+  function meter(k, v, color, label) {
+    const s = G, known = s.bands[k], [lo, hi] = s.p.ideal[k];
+    if (v == null) return `<div class="stat"><div class="stat-head"><span class="lb">${STAT[k]}</span><span class="chip mute">측정 전</span><b>?</b></div><div class="meter unknown"></div></div>`;
+    const chip = known ? (v < lo ? '<span class="chip bad">부족</span>' : v > hi ? '<span class="chip bad">너무 많음</span>' : '<span class="chip ok">알맞음</span>') : '<span class="chip mute">좋아하는 범위 조사 필요</span>';
+    return `<div class="stat"><div class="stat-head"><span class="lb">${STAT[k]}</span>${chip}<small>${label}</small><b>${v}</b></div>
+      <div class="meter">${known ? `<span class="band" style="left:${lo}%;width:${hi - lo}%"></span>` : ''}<span class="fill" style="width:${v}%;background:${color}"></span><span class="marker" style="left:${v}%"></span></div></div>`;
+  }
+
+  function renderStage() {
+    const s = G, m = s.measured, ago = m ? (s.week === m.week ? '이번 주 측정' : `${s.week - m.week}주 전 측정`) : '';
+    const h = Math.round(s.health), hc = h >= 60 ? 'var(--leaf)' : h >= 30 ? 'var(--sun)' : 'var(--danger)';
+    const conds = [];
+    if (s.known.aphid && s.aphid) conds.push(`<span>진딧물 ${['', '조금', '번지는 중', '많음', '심각'][s.aphid]}</span>`);
+    if (s.known.mildew && s.mildew) conds.push(`<span>흰가루병 ${['', '조금', '번지는 중', '많음', '심각'][s.mildew]}</span>`);
+    const gear = [s.staked && '지지대', s.potBig && '큰 화분', s.wick && '심지 급수기', s.lamp && 'LED 등'].filter(Boolean).map(x => `<span class="gear">${x}</span>`);
+    const inv = Object.entries(s.items).filter(([, n]) => n).map(([k, n]) => `<span class="gear">${ITEMS[k].name} ×${n}</span>`);
+    const path = s.path ? PATHS[s.path] : null;
+    const prog = s.path === 'science' ? `지식 ${s.knowledge}/12 · 밝힌 범위 ${Object.values(s.bands).filter(Boolean).length}/3` : s.path === 'market' ? `친구 ${s.friends}/6 · 용돈 ${s.coins}/20` : s.path === 'contest' ? `대회 준비 ${s.contest}회 · 성장과 건강이 높을수록 유리` : '';
+    $('stage').innerHTML = `
+      <div class="stage-head"><h2>${esc(s.pet)}</h2><small>${s.p.name} · ${stageName(s.p, s.growth)}</small></div>
+      <div class="plant-svg">${drawPlant(s.k, s.growth, s.health, s)}</div>
+      <p class="spotline">${SPOTS[s.spot].name} · ${WEATHER[s.weather].note}</p>
+      <div class="stats">
+        <div class="stat"><div class="stat-head"><span class="lb">건강</span><span class="chip ${h >= 50 ? 'ok' : 'bad'}">${h >= 70 ? '튼튼해요' : h >= 50 ? '괜찮아요' : h >= 25 ? '힘들어해요' : '위험해요'}</span><b>${h}</b></div>
+          <div class="meter"><span class="fill" style="width:${h}%;background:${hc};opacity:.9"></span></div></div>
+        <div class="stat"><div class="stat-head"><span class="lb">성장</span><b>${Math.round(s.growth)}%</b></div>
+          <div class="meter"><span class="fill" style="width:${s.growth}%;background:var(--leaf);opacity:.9"></span></div></div>
+        ${meter('light', lightOf(s), 'var(--sun)', '예상')}
+        ${meter('water', m && m.water, 'var(--water)', ago)}
+        ${meter('nutri', m && m.nutri, 'var(--nutri)', ago)}
+      </div>
+      ${conds.length || gear.length || inv.length ? `<div class="conds">${conds.join('')}${gear.join('')}${inv.join('')}</div>` : ''}
+      ${path ? `<div class="goal"><b>${path.name}</b><span>${path.goal}</span><small>${prog}</small></div>` : '<small>물과 양분은 관찰해야 정확히 알 수 있어요. 빗금 막대는 아직 모르는 값이에요.</small>'}`;
+  }
+
+  function renderFeed() {
+    const c = G.cur.slice().reverse().slice(0, 3);
+    $('feed').innerHTML = `<h4>${G.week}주차에 한 일</h4>` + (c.length ? c.map(t => `<p>${esc(t)}</p>`).join('') : '<p>행동력 3을 어디에 쓸지 골라 보세요. 상점은 행동력이 들지 않아요.</p>');
+  }
+
+  function renderTab() {
+    const s = G;
+    document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+    if (tab === 'act') {
+      $('tabbody').innerHTML = `<div class="acts">${actionsFor(s).map(a => {
+        const why = s.ap < 1 ? '행동력이 없어요' : a.need ? a.need(s) : '';
+        return `<button class="act${a.special ? ' special' : ''}" data-act="${a.id}" ${why ? 'disabled' : ''}><b>${a.name}</b><small>${a.desc}</small><span class="cost">${why || '행동력 1'}</span></button>`;
+      }).join('')}</div>`;
+    } else if (tab === 'shop') {
+      $('tabbody').innerHTML = `<div class="shop">${Object.entries(ITEMS).map(([k, it]) => {
+        const owned = it.once ? s[k] : 0, dis = owned || s.coins < it.price;
+        return `<div class="row"><div><b>${it.name}</b><br><small>${it.desc}${!it.once && s.items[k] ? ` 보유 ${s.items[k]}` : ''}</small></div>
+          <button class="buy" data-buy="${k}" ${dis ? 'disabled' : ''}>${owned ? '설치됨' : `용돈 ${it.price}`}</button></div>`;
+      }).join('')}</div>`;
+    } else {
+      const weeks = [{ week: s.week, weather: s.weather, entries: s.cur, now: true }, ...s.log.slice().reverse()];
+      $('tabbody').innerHTML = `<div class="journal">${weeks.map(w => `<section><h4>${w.week}주차 · ${WEATHER[w.weather].name}${w.now ? ' (지금)' : ''}</h4><ul>${w.entries.length ? w.entries.map(t => `<li>${esc(t)}</li>`).join('') : '<li>아직 기록이 없어요.</li>'}</ul></section>`).join('')}</div>`;
+    }
+    $('aphint').textContent = s.ap ? `행동력 ${s.ap} 남음` : '이번 주 행동을 모두 했어요';
+    $('endweek').classList.toggle('pulse', !s.ap);
+  }
+
+  const renderAll = () => { renderHud(); renderStage(); renderFeed(); renderTab(); };
+
+  // ---- 모달 ----
+  let onModal = {};
+  function modal(html, cls = '', handlers = {}) {
+    $('sheet').className = 'sheet ' + cls; $('sheet').innerHTML = html; $('modal').hidden = false; onModal = handlers;
+    const f = $('sheet').querySelector('button:not(:disabled)'); if (f) f.focus();
+  }
+  const closeModal = () => { $('modal').hidden = true; onModal = {}; renderAll(); };
+
+  function showOptions(a) {
+    const opts = a.opts(G);
+    modal(`<div class="eyebrow">행동력 1</div><h3>${a.name}</h3><div class="choices">${opts.map((o, i) => {
+      const why = o.need ? o.need(G) : '';
+      return `<button class="choice" data-m="${i}" ${why ? 'disabled' : ''}><span class="k">${'가나다라'[i]}</span><span>${o.label}<small>${why || o.sub || ''}</small></span></button>`;
+    }).join('')}</div><button class="btn ghost" data-m="x">취소</button>`, '', {
+      pick: i => { doAction(G, a, opts[i]); closeModal(); } });
+  }
+
+  function showCard(e, kind) {
+    modal(`<div class="eyebrow"><span>${G.week}주차</span><span class="pill">${kind}</span></div><h3>${e.title}</h3><p>${e.text}</p>
+      <div class="choices">${e.choices.map((c, i) => { const why = c.need ? c.need(G) : '';
+        return `<button class="choice" data-m="${i}" ${why ? 'disabled' : ''}><span class="k">${'가나다'[i]}</span><span>${c.label}${why ? `<small>${why}</small>` : ''}</span></button>`; }).join('')}</div>`, 'event', {
+      pick: i => { const r = e.choices[i].run(G); note(G, `${e.title}: ${r}`);
+        modal(`<div class="eyebrow"><span>${kind} 결과</span></div><h3>${esc(r)}</h3><p class="tip"><b>과학 메모</b>${e.tip}</p><button class="btn" data-m="x">계속하기</button>`, '', {}); } });
+  }
+
+  function showInfo(eyebrow, title, body) {
+    modal(`<div class="eyebrow"><span class="pill">${eyebrow}</span></div><h3>${title}</h3>${body}<button class="btn" data-m="x">시작하기</button>`, '', {});
+  }
+
+  function showRoulette() {
+    const step = 360 / SLICES.length, col = { calm: 'var(--s-calm)', event: 'var(--s-event)', friend: 'var(--s-friend)', luck: 'var(--s-luck)' };
+    const grad = SLICES.map((t, i) => `${col[t]} ${i * step}deg ${(i + 1) * step}deg`).join(',');
+    const labels = SLICES.map((t, i) => { const a = (i + .5) * step, r = a * Math.PI / 180;
+      return `<span style="left:${50 + Math.sin(r) * 33}%;top:${50 - Math.cos(r) * 33}%;transform:translate(-50%,-50%) rotate(${a}deg)">${{ calm: '평온', event: '돌발', friend: '친구', luck: '행운' }[t]}</span>`; }).join('');
+    modal(`<div class="eyebrow"><span>${G.week}주차 시작</span><span>용돈 +2</span></div><h3>운명의 룰렛</h3>
+      <p>이번 주엔 무슨 일이 생길까요? 날씨는 <b>${WEATHER[G.weather].name}</b>이에요.</p>
+      <div class="wheel-wrap"><div class="pointer"></div><div class="wheel" id="wheel" style="background:conic-gradient(${grad})">${labels}</div></div>
+      <button class="btn" data-m="spin" style="align-self:center">룰렛 돌리기</button>`, '', {
+      spin: () => {
+        const i = Math.floor(Math.random() * SLICES.length), type = SLICES[i];
+        $('sheet').querySelector('[data-m="spin"]').disabled = true;
+        $('wheel').style.transform = `rotate(${360 * 5 - (i + .5) * step}deg)`;
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        setTimeout(() => resolveSlice(type), reduce ? 50 : 2700);
+      } });
+  }
+
+  function resolveSlice(type) {
+    if (type === 'event' || type === 'friend') {
+      const e = drawEvent(G, type);
+      if (e) return showCard(e, type === 'event' ? '돌발 사건' : '친구 사건');
+      type = 'calm';
+    }
+    const msg = type === 'luck' ? note(G, '행운: ' + pick(LUCK)(G)) : '평온한 한 주예요. 계획대로 차근차근 돌볼 수 있어요.';
+    modal(`<div class="eyebrow"><span class="pill">${SLICE_NAME[type]}</span></div><h3>${esc(msg.replace(/^행운: /, ''))}</h3><button class="btn" data-m="x">좋아요</button>`, '', {});
+  }
+
+  function showPath() {
+    modal(`<div class="eyebrow"><span>4주차</span><span class="pill">인생 갈림길</span></div><h3>이제 어떤 길을 걸을까요?</h3>
+      <p>선생님이 학기 말 행사 세 가지를 알려 주셨어요. 하나를 고르면 그 길만의 특별 행동이 생기고, 엔딩이 달라져요.</p>
+      <div class="paths">${Object.entries(PATHS).map(([k, p]) => `<button class="path" data-m="${k}"><b>${p.name}</b><small>목표: ${p.goal}</small><small>특별 행동: ${p.act}</small></button>`).join('')}</div>`, 'event', {
+      pick: k => { G.path = k; note(G, `인생 갈림길: ${PATHS[k].name}의 길을 골랐어요.`); closeModal(); } });
+  }
+
+  function showMidterm() {
+    const s = G, good = s.health >= 60;
+    if (good) s.coins += 3;
+    const msg = good ? '"아주 잘 키우고 있구나!" 선생님이 칭찬 용돈 3을 주셨어요.' : '"잎 색이 조금 걱정되는구나. 흙을 자주 관찰해 보렴."';
+    note(s, '중간 점검: ' + msg);
+    modal(`<div class="eyebrow"><span>8주차</span><span class="pill">중간 점검</span></div><h3>선생님의 중간 점검</h3><p>${msg}</p>
+      <p class="tip"><b>남은 4주</b>${PATHS[s.path].goal}</p><button class="btn" data-m="x">힘내기</button>`, '', {});
+  }
+
+  function showSummary(res) {
+    const s = G, b = res.before;
+    const deltas = ['health', 'growth'].map(k => { const dv = Math.round(s[k] - b[k]); return `<span class="${dv >= 0 ? 'up' : 'down'}">${STAT[k]} ${dv >= 0 ? '+' : ''}${dv}</span>`; }).join('');
+    const dead = s.health <= 0, last = s.week > WEEKS;
+    modal(`<div class="eyebrow"><span>${res.week}주차가 지났어요</span><span>${WEATHER[res.weather].name}</span></div>
+      <div class="plant-svg" style="max-width:150px;margin:auto">${drawPlant(s.k, s.growth, s.health, s)}</div>
+      <h3>${dead ? `${esc(s.pet)}가 시들어 버렸어요` : `${esc(s.pet)}의 일주일`}</h3>
+      <div class="deltas">${deltas}</div>
+      <ul class="lines">${res.lines.map(([t, c]) => `<li class="${c}">${t}</li>`).join('') || '<li>조용히 자랐어요.</li>'}</ul>
+      <small>증상만 보고는 원인을 확실히 알 수 없어요. 처진 잎은 물이 부족해도, 너무 많아도 생겨요. 흙을 관찰해 보세요.</small>
+      <button class="btn" data-m="next">${dead || last ? '결말 보기' : `${s.week}주차로`}</button>`, '', { next: nextWeek });
+  }
+
+  function nextWeek() {
+    if (G.health <= 0 || G.week > WEEKS) return finish();
+    beginWeek(G);
+    $('modal').hidden = true; renderAll();
+    if (G.week === 4) showPath(); else if (G.week === 8) showMidterm(); else showRoulette();
+  }
+
+  function finish() {
+    const s = G, e = ending(s), data = store.get(), fresh = [];
+    if (!e.dead && s.growth >= 85 && !data.grown.includes(s.k)) data.grown.push(s.k);
+    for (const a of ACHV) {
+      const ok = a.id === 'gardener' ? data.grown.length >= 5 : a.test(s, e);
+      if (ok && !data.got.includes(a.id)) { data.got.push(a.id); fresh.push(a); }
+    }
+    store.set(data);
+    $('modal').hidden = true; $('game').hidden = true; $('hud').hidden = true; $('end').hidden = false;
+    $('end').innerHTML = `
+      <div class="stage"><div class="plant-svg">${drawPlant(s.k, e.g, e.dead ? 0 : e.h, s)}</div></div>
+      <div class="verdict">
+        <span class="eyebrow">${esc(s.pet)} · ${s.p.name} · ${PATHS[s.path || 'contest'].name}${e.dead ? ` · ${s.week - 1}주차에서 멈춤` : ' · 12주 완주'}</span>
+        <h2>${e.title}</h2>
+        <p>${esc(e.plant)} ${esc(e.line)}</p>
+        <div class="summary"><div><small>성장</small><b>${e.g}%</b></div><div><small>건강</small><b>${e.h}</b></div><div><small>지식</small><b>${s.knowledge}</b></div><div><small>친구</small><b>${s.friends}</b></div><div><small>용돈</small><b>${s.coins}</b></div></div>
+        ${fresh.length ? `<div class="achv">${fresh.map(a => `<div class="got"><b>새 업적: ${a.name}</b><small>${a.desc}</small></div>`).join('')}</div>` : ''}
+        <h3>관찰일지</h3>
+        <div class="journal">${s.log.slice().reverse().map(w => `<section><h4>${w.week}주차 · ${WEATHER[w.weather].name}</h4><ul>${w.entries.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`).join('')}</div>
+        <div class="rowb"><button class="btn" data-again>${s.p.name} 다시 키우기</button><button class="btn ghost" data-home>다른 식물 고르기</button></div>
+      </div>`;
+    window.scrollTo({ top: 0 });
+  }
+
+  function start(k) {
+    G = newGame(k, $('petname').value.trim() || PLANTS[k].pet); tab = 'act';
+    $('pick').hidden = true; $('end').hidden = true; $('game').hidden = false; $('hud').hidden = false;
+    renderAll(); window.scrollTo({ top: 0 });
+    showInfo('1주차', `${esc(G.pet)}와 함께하는 12주`, `<ul class="lines">
+      <li>매주 <b>행동력 3</b>으로 물 주기, 관찰, 조사, 화분 옮기기, 아르바이트 등을 골라요.</li>
+      <li>물과 양분 수치는 <b>관찰</b>해야 보여요. 좋아하는 범위는 <b>도서관 조사</b>로 알아내요.</li>
+      <li>위쪽의 <b>날씨 예보</b>를 보고 대비하세요. 예보는 가끔 틀려요.</li>
+      <li>매주 <b>운명의 룰렛</b>이 돌아가고, 4주차에는 <b>인생 갈림길</b>이 기다려요.</li></ul>
+      <p class="tip"><b>첫 주 팁</b>먼저 화분 자리를 정하고, 흙을 관찰해 보세요.</p>`);
+  }
+
+  document.addEventListener('click', ev => {
+    const t = ev.target.closest('button'); if (!t || t.disabled) return;
+    const d = t.dataset;
+    if (d.m !== undefined) {
+      if (d.m === 'x') return closeModal();
+      if (d.m === 'spin') return onModal.spin();
+      if (d.m === 'next') return onModal.next();
+      return onModal.pick && onModal.pick(isNaN(+d.m) ? d.m : +d.m);
+    }
+    if (d.plant) return start(d.plant);
+    if (d.tab) { tab = d.tab; return renderTab(); }
+    if (d.act) { const a = actionsFor(G).find(x => x.id === d.act); if (a.opts) showOptions(a); else { doAction(G, a); renderAll(); } return; }
+    if (d.buy) { buy(G, d.buy); return renderAll(); }
+    if (t.hasAttribute('data-endweek')) return showSummary(endWeek(G));
+    if (t.hasAttribute('data-again')) return start(G.k);
+    if (t.hasAttribute('data-home')) { $('end').hidden = true; $('pick').hidden = false; renderPick(); }
+  });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('modal').hidden && $('sheet').querySelector('[data-m="x"]')) closeModal(); });
+
+  renderPick();
+})();
+</script>
